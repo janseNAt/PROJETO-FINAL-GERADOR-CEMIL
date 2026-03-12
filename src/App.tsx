@@ -559,7 +559,7 @@ function LoginScreen({ onLogin }: { onLogin: (u: UserData) => void }) {
         </form>
         
         <div className="mt-8 pt-8 border-t border-slate-50 text-center">
-          <p className="text-xs text-slate-400">Dica: Admin padrão é admin@cemil.com / admin123</p>
+          <p className="text-xs text-slate-400">Dica: entre em contato com o TI da escola</p>
         </div>
       </div>
     </div>
