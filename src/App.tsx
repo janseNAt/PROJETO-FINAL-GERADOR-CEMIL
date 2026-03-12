@@ -36,6 +36,11 @@ export default function App() {
   const [title, setTitle] = useState('Avaliação');
   const [exporting, setExporting] = useState(false);
 
+  // Novos Estados para Gravação de Provas
+  const [examId, setExamId] = useState<string | null>(null);
+  const [savedExams, setSavedExams] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -58,6 +63,47 @@ export default function App() {
     await fetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
     setView('editor');
+  };
+
+  // Funções de Gravação
+  const fetchSavedExams = async () => {
+    const res = await fetch('/api/exams');
+    if (res.ok) setSavedExams(await res.json());
+  };
+
+  useEffect(() => {
+    if (user && view === 'editor') fetchSavedExams();
+  }, [user, view]);
+
+  const handleSaveExam = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/exams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: examId, title, blocks })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setExamId(data.id); 
+        fetchSavedExams();  
+        alert('Prova guardada com sucesso!');
+      }
+    } catch (err) {
+      alert('Erro ao guardar a prova.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLoadExam = async (id: string) => {
+    const res = await fetch(`/api/exams/${id}`);
+    if (res.ok) {
+      const data = await res.json();
+      setExamId(data.id);
+      setTitle(data.title);
+      setBlocks(data.blocks);
+    }
   };
 
   if (loading) {
@@ -208,7 +254,27 @@ export default function App() {
           </nav>
         </div>
 
-        <div className="p-6 flex-1">
+        <div className="p-6 border-b border-slate-100 flex-1 overflow-y-auto">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">As Minhas Provas</h3>
+            <button onClick={() => { setExamId(null); setTitle('Nova Avaliação'); setBlocks([]); }} className="text-xs text-indigo-600 hover:underline font-bold">+ Nova</button>
+          </div>
+          <div className="space-y-2 mb-8">
+            {savedExams.length === 0 ? (
+              <p className="text-xs text-slate-400 italic">Nenhuma prova guardada.</p>
+            ) : (
+              savedExams.map(exam => (
+                <button 
+                  key={exam.id} 
+                  onClick={() => handleLoadExam(exam.id)}
+                  className={`w-full text-left p-3 rounded-xl text-sm transition-all truncate border ${examId === exam.id ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-200 hover:shadow-sm'}`}
+                >
+                  📄 {exam.title}
+                </button>
+              ))
+            )}
+          </div>
+
           <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Construtor</h3>
           <div className="space-y-3">
             <BlockAction icon={<Type />} label="Texto de Apoio" onClick={() => addBlock('texto_apoio')} />
@@ -256,14 +322,25 @@ export default function App() {
               className="font-bold text-slate-800 bg-transparent border-none focus:ring-0 p-0 text-lg"
             />
           </div>
-          <button 
-            onClick={handleExport}
-            disabled={exporting}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-indigo-100 shadow-lg disabled:opacity-50 active:scale-95"
-          >
-            {exporting ? <Loader2 className="animate-spin w-4 h-4" /> : <Download className="w-4 h-4" />}
-            Exportar .DOCX
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handleSaveExam}
+              disabled={saving}
+              className="bg-white border-2 border-indigo-100 hover:border-indigo-600 text-indigo-600 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+              Guardar Prova
+            </button>
+
+            <button 
+              onClick={handleExport}
+              disabled={exporting}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-indigo-100 shadow-lg disabled:opacity-50 active:scale-95"
+            >
+              {exporting ? <Loader2 className="animate-spin w-4 h-4" /> : <Download className="w-4 h-4" />}
+              Exportar .DOCX
+            </button>
+          </div>
         </header>
 
         <div className="flex-1 p-10 overflow-y-auto flex justify-center bg-slate-50/30">
