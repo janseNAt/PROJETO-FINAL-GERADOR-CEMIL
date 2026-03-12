@@ -30,8 +30,16 @@ db.exec(`
     password_hash TEXT,
     role TEXT, -- 'admin' or 'professor'
     must_change_password INTEGER DEFAULT 0
+    
   );
-
+-- ADICIONE ESTE BLOCO AQUI:
+  CREATE TABLE IF NOT EXISTS exams (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    title TEXT,
+    blocks TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
   INSERT OR IGNORE INTO schools (id, name, logo_url) 
   VALUES ('school-1', 'Instituto de Educação Avançada', 'https://picsum.photos/seed/school/200/100');
 `);
