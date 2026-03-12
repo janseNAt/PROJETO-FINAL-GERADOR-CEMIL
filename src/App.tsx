@@ -33,7 +33,7 @@ export default function App() {
   // Editor States
   const [school, setSchool] = useState<any>({ name: 'Instituto de Educação Avançada', logo_url: 'https://picsum.photos/seed/school/200/100' });
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [title, setTitle] = useState('Avaliação de Literatura');
+  const [title, setTitle] = useState('Avaliação');
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
