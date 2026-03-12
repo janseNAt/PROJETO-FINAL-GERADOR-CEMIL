@@ -155,6 +155,38 @@ async function startServer() {
 
   // --- DOCX LOGIC ---
   // ... (keep processImage and htmlToTextRuns as they are)
+  // --- EXAMS ROUTES (Bases de Dados de Provas) ---
+
+  // Guardar ou Atualizar Prova
+  app.post("/api/exams", authenticate, (req: any, res) => {
+    const { id, title, blocks } = req.body;
+    const blocksJson = JSON.stringify(blocks);
+    const userId = req.user.id;
+
+    if (id) {
+      db.prepare("UPDATE exams SET title = ?, blocks = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?")
+        .run(title, blocksJson, id, userId);
+      res.json({ id });
+    } else {
+      const newId = Math.random().toString(36).substr(2, 9);
+      db.prepare("INSERT INTO exams (id, user_id, title, blocks) VALUES (?, ?, ?, ?)")
+        .run(newId, userId, title, blocksJson);
+      res.json({ id: newId });
+    }
+  });
+
+  // Listar todas as provas do professor
+  app.get("/api/exams", authenticate, (req: any, res) => {
+    const exams = db.prepare("SELECT id, title, updated_at FROM exams WHERE user_id = ? ORDER BY updated_at DESC").all(req.user.id);
+    res.json(exams);
+  });
+
+  // Carregar uma prova específica
+  app.get("/api/exams/:id", authenticate, (req: any, res) => {
+    const exam = db.prepare("SELECT * FROM exams WHERE id = ? AND user_id = ?").get(req.params.id, req.user.id) as any;
+    if (!exam) return res.status(404).json({ error: "Prova não encontrada" });
+    res.json({ ...exam, blocks: JSON.parse(exam.blocks) });
+  }); 
   async function processImage(url: string) {
     try {
       if (url.startsWith('data:')) {
